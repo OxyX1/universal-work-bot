@@ -1,16 +1,22 @@
 const express = require('express');
-const http = require('http');
-const path = require('path');
-const {fork} = require('child_process');
-const port = process.env.PORT || 8080;
-
+const { fork } = require('child_process');
 const app = express();
+const port = 8080;
 
 app.get('/random64', (req, res) => {
     const child = fork('api/random64.js');
     child.on('message', (message) => {
-        console.log('Message from child: ' + message);
-        res.send(message);
+        if (message.error) {
+            console.error('Error from child process:', message.error);
+            res.status(500).send('An error occurred');
+        } else {
+            console.log('Message from child:', message);
+            res.send(message);
+        }
+    });
+    child.on('error', (err) => {
+        console.error('Failed to start child process:', err);
+        res.status(500).send('Failed to start child process');
     });
     child.send('start');
 });
@@ -21,5 +27,5 @@ app.use((req, res, next) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Server is running on port ${port}`);
 });

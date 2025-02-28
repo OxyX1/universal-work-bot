@@ -2,29 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Screen Share Client</title>
+  <title>Screen Share Viewer</title>
 </head>
 <body>
-  <h1>Screen Sharing</h1>
-  <button id="start">Start Screen Share</button>
+  <h1>Screen Share Viewer</h1>
+  <video id="video" autoplay></video>
+  <button id="stopButton">Stop Sharing</button>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+    const videoElement = document.getElementById('video');
 
-    document.getElementById('start').onclick = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        const videoTrack = stream.getVideoTracks()[0];
-        
-        videoTrack.onended = () => {
-          socket.emit('stop-sharing');
-        };
+    socket.on('screen-share', (stream) => {
+      videoElement.srcObject = stream;
+    });
 
-        socket.emit('screen-share', stream);
-      } catch (err) {
-        console.error("Error: " + err);
-      }
-    };
+    socket.on('stop-sharing', () => {
+      videoElement.srcObject = null;
+      alert('Screen sharing stopped.');
+    });
+
+    document.getElementById('stopButton').addEventListener('click', () => {
+      socket.emit('stop-sharing');
+    });
   </script>
-  <script src="/socket.io/socket.io.js"></script>
 </body>
 </html>

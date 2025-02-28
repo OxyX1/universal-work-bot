@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "install": "npm install express http socket.io",
+        "install": "npm install express http socket.io uuid",
         "start": "node index.js"
     }
 }

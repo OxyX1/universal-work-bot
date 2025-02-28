@@ -6,17 +6,8 @@ const port = 8080;
 app.get('/random64', (req, res) => {
     const child = fork('api/random64.js');
     child.on('message', (message) => {
-        if (message.error) {
-            console.error('Error from child process:', message.error);
-            res.status(500).send('An error occurred');
-        } else {
-            console.log('Message from child:', message);
-            res.send(message);
-        }
-    });
-    child.on('error', (err) => {
-        console.error('Failed to start child process:', err);
-        res.status(500).send('Failed to start child process');
+        console.log('Message from child:', message);
+        res.send(message);
     });
     child.send('start');
 });

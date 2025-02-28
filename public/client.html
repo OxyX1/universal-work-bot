@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Screen Share Client</title>
+</head>
+<body>
+  <h1>Screen Sharing</h1>
+  <button id="start">Start Screen Share</button>
+  <script>
+    const socket = io();
+
+    document.getElementById('start').onclick = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const videoTrack = stream.getVideoTracks()[0];
+        
+        videoTrack.onended = () => {
+          socket.emit('stop-sharing');
+        };
+
+        socket.emit('screen-share', stream);
+      } catch (err) {
+        console.error("Error: " + err);
+      }
+    };
+  </script>
+  <script src="/socket.io/socket.io.js"></script>
+</body>
+</html>

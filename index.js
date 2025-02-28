@@ -1,7 +1,10 @@
 const express = require('express');
 const { fork } = require('child_process');
+const cors = require('cors');
 const app = express();
 const port = 8080;
+
+app.use(cors()); // Add this line to enable CORS
 
 app.get('/random64', (req, res) => {
     const child = fork('api/random64.js');

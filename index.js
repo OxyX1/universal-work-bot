@@ -52,6 +52,21 @@ app.get('/secure64', (req, res) => {
     child.send('start');
 });
 
+app.get('/soundjs', (req, res) => {
+    const child = fork('api/sound.js');
+
+    child.on('message', (message) => {
+        if (message.error) {
+            res.status(500).send(message.error);
+        } else {
+            res.setHeader('Content-Type', 'audio/mpeg');
+            fs.createReadStream(message.filePath).pipe(res);
+        }
+    });
+
+
+    child.send({ type: 'play' });
+});
 
 
 app.use((req, res, next) => {

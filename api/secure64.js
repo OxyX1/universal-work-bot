@@ -1,7 +1,8 @@
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
-const uniqueKey = uuidv4();
-
-console.log(uniqueKey);
-
-
+process.on('message', (msg) => {
+    if (msg === 'start') {
+        const randomHex = crypto.randomBytes(32).toString('hex'); // 64-byte hex
+        process.send(randomHex);
+    }
+});

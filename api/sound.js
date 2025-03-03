@@ -17,7 +17,7 @@ process.on('message', (msg) => {
         const outputFile = `./temp/output-${uuidv4()}.mp3`;
 
         ffmpeg(inputFile)
-            .audioFilters('asetrate=44100*1.2,atempo=1/1.2') // Increase pitch
+            .audioFilters('asetrate=44100*1.2,atempo=1/1.2')
             .save(outputFile)
             .on('end', () => process.send({ filePath: outputFile }))
             .on('error', (err) => process.send({ error: 'Error processing sound', details: err }));

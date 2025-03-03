@@ -55,12 +55,16 @@ app.get('/secure64', (req, res) => {
     child.send('start');
 });
 
-// Helper to ensure the VCS process is running
 function getVcsProcess(sessionId) {
     if (!activeProcesses[sessionId] || activeProcesses[sessionId].killed) {
         activeProcesses[sessionId] = fork('vcs.js');
 
         activeProcesses[sessionId].on('exit', () => {
+            delete activeProcesses[sessionId];
+        });
+
+        activeProcesses[sessionId].on('error', (err) => {
+            console.error(`Error in VCS process: ${err}`);
             delete activeProcesses[sessionId];
         });
     }
@@ -88,6 +92,7 @@ app.post('/vcs', (req, res) => {
 
     child.send({ sessionId: userSessionId, command });
 });
+
 
 app.use((req, res, next) => {
     console.log(`${req.method} request for '${req.url}'`);

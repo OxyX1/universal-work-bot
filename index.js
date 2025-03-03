@@ -60,7 +60,6 @@ function getVcsProcess(sessionId) {
     if (!activeProcesses[sessionId] || activeProcesses[sessionId].killed) {
         activeProcesses[sessionId] = fork('vcs.js');
 
-        // Remove from activeProcesses if it exits
         activeProcesses[sessionId].on('exit', () => {
             delete activeProcesses[sessionId];
         });
@@ -78,19 +77,15 @@ app.post('/vcs', (req, res) => {
     const userSessionId = sessionId || uuidv4();
     const child = getVcsProcess(userSessionId);
 
-    // Listen for only one response per request
-    child.once('message', (message) => {
-        if (message.sessionId === userSessionId) {
-            res.json(message);
-        }
-    });
-
-    // Timeout in case the process doesn't respond
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
         res.status(500).json({ error: 'Command execution timeout' });
     }, 5000);
 
-    // Send command to the child process
+    child.once('message', (message) => {
+        clearTimeout(timeout);
+        res.json(message);
+    });
+
     child.send({ sessionId: userSessionId, command });
 });
 

@@ -16,6 +16,14 @@ app.get('/random64', (req, res) => {
     child.send('start');
 });
 
+app.get('/secure64', (req, res) => {
+    const child = fork('api/secure64.js');
+    child.on('message', (message) => {
+        console.log('Message from child: ' + message);
+        res.send(message);
+    });
+});
+
 app.use((req, res, next) => {
     console.log(`${req.method} request for '${req.url}'`);
     next();

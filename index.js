@@ -55,29 +55,42 @@ app.get('/secure64', (req, res) => {
     child.send('start');
 });
 
+// Helper to ensure the VCS process is running
+function getVcsProcess(sessionId) {
+    if (!activeProcesses[sessionId] || activeProcesses[sessionId].killed) {
+        activeProcesses[sessionId] = fork('vcs.js');
 
+        // Remove from activeProcesses if it exits
+        activeProcesses[sessionId].on('exit', () => {
+            delete activeProcesses[sessionId];
+        });
+    }
+    return activeProcesses[sessionId];
+}
 
 app.post('/vcs', (req, res) => {
     const { command, sessionId } = req.body;
     
     if (!command) {
-        return res.status(400).send({ error: 'No command provided' });
+        return res.status(400).json({ error: 'No command provided' });
     }
 
-    const userSessionId = sessionId || uuidv4(); // Generate session ID if not provided
+    const userSessionId = sessionId || uuidv4();
+    const child = getVcsProcess(userSessionId);
 
-    if (!activeProcesses[userSessionId]) {
-        activeProcesses[userSessionId] = fork('vcs.js');
-    }
-
-    const child = activeProcesses[userSessionId];
-
-    child.on('message', (message) => {
+    // Listen for only one response per request
+    child.once('message', (message) => {
         if (message.sessionId === userSessionId) {
-            res.send(message);
+            res.json(message);
         }
     });
 
+    // Timeout in case the process doesn't respond
+    setTimeout(() => {
+        res.status(500).json({ error: 'Command execution timeout' });
+    }, 5000);
+
+    // Send command to the child process
     child.send({ sessionId: userSessionId, command });
 });
 

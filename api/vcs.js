@@ -1,25 +1,14 @@
-const { spawn } = require('child_process');
-const { v4: uuidv4 } = require('uuid');
-
-const sessions = {}; // Store user shell processes
+const { exec } = require('child_process');
 
 process.on('message', (message) => {
     const { sessionId, command } = message;
 
-    if (!sessions[sessionId]) {
-        // Start a new shell process for this session
-        sessions[sessionId] = spawn('bash'); // Change to 'cmd' for Windows
-    }
-
-    const shell = sessions[sessionId];
-
-    shell.stdout.once('data', (data) => {
-        process.send({ sessionId, output: data.toString() });
+    // Execute the shell command
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            process.send({ sessionId, error: stderr || error.message });
+        } else {
+            process.send({ sessionId, output: stdout || 'Command executed successfully' });
+        }
     });
-
-    shell.stderr.once('data', (data) => {
-        process.send({ sessionId, error: data.toString() });
-    });
-
-    shell.stdin.write(command + '\n'); // Execute command
 });

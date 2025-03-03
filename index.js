@@ -8,6 +8,8 @@ const port = 8080;
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+const activeProcesses = {}; // Store active child processes
+
 app.get('/random64', (req, res) => {
     const child = fork('api/random64.js');
     child.on('message', (message) => {
@@ -53,20 +55,31 @@ app.get('/secure64', (req, res) => {
     child.send('start');
 });
 
+
+
 app.post('/vcs', (req, res) => {
-    const { command } = req.body;
+    const { command, sessionId } = req.body;
+    
     if (!command) {
         return res.status(400).send({ error: 'No command provided' });
     }
 
-    const child = fork('vcs.js');
+    const userSessionId = sessionId || uuidv4(); // Generate session ID if not provided
+
+    if (!activeProcesses[userSessionId]) {
+        activeProcesses[userSessionId] = fork('vcs.js');
+    }
+
+    const child = activeProcesses[userSessionId];
+
     child.on('message', (message) => {
-        res.send(message);
+        if (message.sessionId === userSessionId) {
+            res.send(message);
+        }
     });
 
-    child.send(command);
+    child.send({ sessionId: userSessionId, command });
 });
-
 
 app.use((req, res, next) => {
     console.log(`${req.method} request for '${req.url}'`);

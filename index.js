@@ -6,6 +6,7 @@ const app = express();
 const port = 8080;
 
 app.use(cors({ origin: '*' }));
+app.use(express.json());
 
 app.get('/random64', (req, res) => {
     const child = fork('api/random64.js');
@@ -52,20 +53,18 @@ app.get('/secure64', (req, res) => {
     child.send('start');
 });
 
-app.get('/soundjs', (req, res) => {
-    const child = fork('api/sound.js');
+app.post('/vcs', (req, res) => {
+    const { command } = req.body;
+    if (!command) {
+        return res.status(400).send({ error: 'No command provided' });
+    }
 
+    const child = fork('vcs.js');
     child.on('message', (message) => {
-        if (message.error) {
-            res.status(500).send(message.error);
-        } else {
-            res.setHeader('Content-Type', 'audio/mpeg');
-            fs.createReadStream(message.filePath).pipe(res);
-        }
+        res.send(message);
     });
 
-
-    child.send({ type: 'play' });
+    child.send(command);
 });
 
 
@@ -75,5 +74,5 @@ app.use((req, res, next) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server is running.`);
 });
